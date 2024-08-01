@@ -56,6 +56,7 @@ class FollowViewSet(CreateRetieveListViewSet):
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)
 
+    # В случае использования constraints в models.py
     '''def perform_create(self, serializer):
         try:
             serializer.save(user=self.request.user)
