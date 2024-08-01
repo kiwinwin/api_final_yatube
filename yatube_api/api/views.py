@@ -1,11 +1,13 @@
+from django.db import IntegrityError
+from django.forms import ValidationError
 from django.shortcuts import get_object_or_404
 from posts.models import Comment, Group, Post, Follow
-from rest_framework import viewsets, permissions, filters, mixins
+from rest_framework import viewsets, permissions, filters, mixins, serializers
 from rest_framework.pagination import LimitOffsetPagination
 
 from api.serializers import (CommentSerializer, GroupSerializer,
                              PostSerializer, FollowSerializer,)
-from api.permissions import IsAuthorOrReadOnlyPermission
+from api.permissions import IsAuthenticatedAuthorOrReadOnlyPermission
 
 
 class CreateRetieveListViewSet(mixins.CreateModelMixin,
@@ -18,7 +20,7 @@ class CreateRetieveListViewSet(mixins.CreateModelMixin,
 class PostViewSet(viewsets.ModelViewSet):
     queryset = Post.objects.all()
     serializer_class = PostSerializer
-    permission_classes = (IsAuthorOrReadOnlyPermission,)
+    permission_classes = (IsAuthenticatedAuthorOrReadOnlyPermission,)
     pagination_class = LimitOffsetPagination
 
     def perform_create(self, serializer):
@@ -32,7 +34,7 @@ class GroupViewSet(viewsets.ReadOnlyModelViewSet):
 
 class CommentViewSet(viewsets.ModelViewSet):
     serializer_class = CommentSerializer
-    permission_classes = (IsAuthorOrReadOnlyPermission,)
+    permission_classes = (IsAuthenticatedAuthorOrReadOnlyPermission,)
 
     def get_queryset(self):
         return Comment.objects.filter(post=self.kwargs.get('post_id'))
@@ -54,4 +56,14 @@ class FollowViewSet(CreateRetieveListViewSet):
         return Follow.objects.filter(user=self.request.user)
 
     def perform_create(self, serializer):
-        return serializer.save(user=self.request.user)
+        try:
+            serializer.save(user=self.request.user)
+        except IntegrityError as error:
+            if 'CHECK' in str(error):
+                message = 'Sorry, you can not follow yourself.'
+            else:
+                message = 'This user-follower couple exists already.'
+            raise serializers.ValidationError(message)
+    
+    '''def perform_create(self, serializer):
+        serializer.save(user=self.request.user)'''
