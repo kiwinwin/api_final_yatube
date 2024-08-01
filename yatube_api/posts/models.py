@@ -1,6 +1,6 @@
 from django.contrib.auth import get_user_model
 from django.db import models
-from django.db.models import Q, F
+from django.db.models import F
 
 User = get_user_model()
 
@@ -65,19 +65,17 @@ class Follow(models.Model):
                                   null=True, blank=True,)
 
     class Meta:
-        
+
         verbose_name = 'подписка'
         verbose_name_plural = 'Подписки'
-    
+
         constraints = (
             models.UniqueConstraint(
                 fields=('user', 'following', ),
-                name='It should be unique set',
-                ),
+                name='It should be unique set',),
             models.CheckConstraint(
-                check=~models.Q(user=F('following')) & ~models.Q(following=F('user')),
-                name='FollowingYourself',
-                ),
+                check=~models.Q(user=F('following')),
+                name='FollowingYourself',),
         )
 
     def __str__(self):

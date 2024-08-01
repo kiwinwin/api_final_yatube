@@ -1,8 +1,6 @@
-from django.db import IntegrityError
-from django.forms import ValidationError
 from django.shortcuts import get_object_or_404
 from posts.models import Comment, Group, Post, Follow
-from rest_framework import viewsets, permissions, filters, mixins, serializers
+from rest_framework import viewsets, permissions, filters, mixins
 from rest_framework.pagination import LimitOffsetPagination
 
 from api.serializers import (CommentSerializer, GroupSerializer,
@@ -56,6 +54,9 @@ class FollowViewSet(CreateRetieveListViewSet):
         return Follow.objects.filter(user=self.request.user)
 
     def perform_create(self, serializer):
+        serializer.save(user=self.request.user)
+
+    '''def perform_create(self, serializer):
         try:
             serializer.save(user=self.request.user)
         except IntegrityError as error:
@@ -63,7 +64,4 @@ class FollowViewSet(CreateRetieveListViewSet):
                 message = 'Sorry, you can not follow yourself.'
             else:
                 message = 'This user-follower couple exists already.'
-            raise serializers.ValidationError(message)
-    
-    '''def perform_create(self, serializer):
-        serializer.save(user=self.request.user)'''
+            raise serializers.ValidationError(message)'''
